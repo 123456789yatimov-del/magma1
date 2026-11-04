@@ -1,0 +1,41 @@
+ name: Build Magma APK
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Generate Android/iOS folders
+        run: |
+          cd ..
+          flutter create magma_temp
+          cp -r magma_temp/android magma/
+          cp -r magma_temp/ios magma/
+          rm -rf magma_temp
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate Isar models
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: magma-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
